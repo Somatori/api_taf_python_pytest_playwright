@@ -1,0 +1,5 @@
+pytest>=8.0,<9
+playwright>=1.40.0
+python-dotenv>=1.0.0
+jsonschema>=4.0.0
+
