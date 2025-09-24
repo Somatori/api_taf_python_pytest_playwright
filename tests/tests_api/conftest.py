@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
+from .clients.api_client import ApiClient
+
 
 # Load root .env
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,3 +71,13 @@ def auth_token(api_request_context):
                     return body["user"][key]
     # If login failed or token not found, return None (tests should handle None)
     return None
+
+
+@pytest.fixture
+def api_client(api_request_context):
+    """
+    Provide a thin ApiClient wrapper around Playwright's APIRequestContext.
+    Function-scoped by default for safety/isolation.
+    """
+    return ApiClient(api_request_context)
+
