@@ -13,7 +13,7 @@ The initial API test automation framework (Python / Pytest / Playwright)
 
 3. Copy .env.template -> .env and fill credentials:
    cp .env.template .env
-   # edit .env to add TEST_USER_EMAIL and TEST_USER_PASS if you want a dedicated test user.
+   #### Edit .env to add TEST_USER_EMAIL and TEST_USER_PASS if you want a dedicated test user.
 
 Notes:
 - This repo uses Playwright's APIRequestContext (sync API) for HTTP calls.
