@@ -1,3 +1,4 @@
+# tests/tests_api/tests_contacts/test_get_contact.py
 import pytest
 from tests.factories import generate_contact_payload
 from tests.utils import safe_json, pretty_resp, assert_ok
@@ -10,7 +11,7 @@ def test_get_contact(api_client, auth_token):
     Flow:
       1) Create a contact (POST /contacts)
       2) GET the same contact by id and assert the response contains the expected fields
-         (firstName, lastName, birthdate, email, phone, street1, city, stateProvince, postalCode, country)
+         (firstName, lastName, birthdate, email, phone, street1, street2, city, stateProvince, postalCode, country)
       3) Verify server-generated fields (_id, owner, __v)
       4) Cleanup (DELETE the created contact) in finally
     """
@@ -45,6 +46,7 @@ def test_get_contact(api_client, auth_token):
             "email",
             "phone",
             "street1",
+            "street2",
             "city",
             "stateProvince",
             "postalCode",
