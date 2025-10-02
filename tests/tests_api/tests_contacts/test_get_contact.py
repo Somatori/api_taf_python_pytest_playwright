@@ -1,78 +1,46 @@
-# tests/tests_api/tests_contacts/test_get_contact.py
 import pytest
-from tests.factories import generate_contact_payload
 from tests.utils import safe_json, pretty_resp, assert_ok
 
+
 @pytest.mark.usefixtures("auth_token")
-def test_get_contact(api_client, auth_token):
+def test_get_contact(api_client, contact_resource, auth_token):
     """
-    Happy-path test for GET /contacts/{contactId}.
+    GET /contacts/{id} — uses the contact_resource fixture that created the contact.
 
-    Flow:
-      1) Create a contact (POST /contacts)
-      2) GET the same contact by id and assert the response contains the expected fields
-         (firstName, lastName, birthdate, email, phone, street1, street2, city, stateProvince, postalCode, country)
-      3) Verify server-generated fields (_id, owner, __v)
-      4) Cleanup (DELETE the created contact) in finally
+    Asserts full payload (including street2) and server-generated fields.
     """
-    created_id = None
-    payload = generate_contact_payload()
+    cid = contact_resource["id"]
+    payload = contact_resource["payload"]
 
-    # 1) Create the contact
-    create_resp = api_client.post("/contacts", token=auth_token, json=payload)
-    assert_ok(create_resp)
+    # GET by id
+    resp = api_client.get(f"/contacts/{cid}", token=auth_token)
+    if resp.status != 200:
+        pretty_resp(resp)
+        pytest.fail(f"Expected GET 200, got {resp.status}")
 
-    create_body = safe_json(create_resp)
-    assert create_body is not None, "Create response body is not valid JSON"
+    body = safe_json(resp)
+    assert body is not None
 
-    created_id = create_body.get("_id")
-    assert created_id, f"Create response did not contain an id: {create_body}"
+    expected_fields = (
+        "firstName",
+        "lastName",
+        "birthdate",
+        "email",
+        "phone",
+        "street1",
+        "street2",
+        "city",
+        "stateProvince",
+        "postalCode",
+        "country",
+    )
 
-    try:
-        # 2) GET the created contact
-        get_resp = api_client.get(f"/contacts/{created_id}", token=auth_token)
-        if get_resp.status != 200:
-            pretty_resp(get_resp)
-            pytest.fail(f"Expected GET status 200, got {get_resp.status}")
+    for f in expected_fields:
+        assert f in body, f"Missing field {f} in GET response"
+        assert body[f] == payload[f], f"Mismatch for field {f}: expected {payload[f]!r}, got {body[f]!r}"
 
-        body = safe_json(get_resp)
-        assert body is not None, "GET response body is not valid JSON"
-
-        # 3) Full payload assertions (fields from the example)
-        expected_fields = (
-            "firstName",
-            "lastName",
-            "birthdate",
-            "email",
-            "phone",
-            "street1",
-            "street2",
-            "city",
-            "stateProvince",
-            "postalCode",
-            "country",
-        )
-
-        for field in expected_fields:
-            assert field in body, f"Missing field '{field}' in GET response"
-            assert body[field] == payload[field], (
-                f"Field '{field}' mismatch: expected {payload[field]!r}, got {body[field]!r}"
-            )
-
-        # Server-generated fields
-        assert "_id" in body, "Response missing '_id'"
-        assert isinstance(body.get("_id"), str)
-
-        assert "owner" in body, "Response missing 'owner'"
-        assert isinstance(body.get("owner"), str)
-
-        if "__v" in body:
-            assert isinstance(body.get("__v"), int)
-
-    finally:
-        # Cleanup: try to delete the created contact (best-effort)
-        if created_id:
-            try:
-                _ = api_client.delete(f"/contacts/{created_id}", token=auth_token)
-            except Exception as e:
-                print(f"Warning: cleanup failed for contact {created_id}: {e}")
+    # server fields
+    assert "_id" in body and isinstance(body.get("_id"), str)
+    assert "owner" in body and isinstance(body.get("owner"), str)
+    if "__v" in body:
+        assert isinstance(body.get("__v"), int)
